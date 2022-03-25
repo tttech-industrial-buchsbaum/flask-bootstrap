@@ -1,0 +1,513 @@
+From: Helmut Buchsbaum <helmut.buchsbaum@opensource.tttech-industrial.com>
+Date: Fri, 25 Mar 2022 15:56:07 +0100
+Subject: Remove sample applications
+
+Signed-off-by: Helmut Buchsbaum <helmut.buchsbaum@opensource.tttech-industrial.com>
+---
+ run_sample_app.py                       | 16 -------
+ sample_app/__init__.py                  | 48 ---------------------
+ sample_app/default_config.py            |  7 ---
+ sample_app/forms.py                     | 22 ----------
+ sample_app/frontend.py                  | 65 ----------------------------
+ sample_app/nav.py                       |  7 ---
+ sample_app/requirements.txt             |  5 ---
+ sample_app/static/html5shiv.min.js      |  4 --
+ sample_app/static/respond.min.js        |  6 ---
+ sample_app/static/sample-app.css        |  3 --
+ sample_app/templates/base.html          | 44 -------------------
+ sample_app/templates/index.html         | 36 ----------------
+ sample_app/templates/signup.html        | 19 ---------
+ sample_application/__init__.py          | 76 ---------------------------------
+ sample_application/templates/index.html | 25 -----------
+ 15 files changed, 383 deletions(-)
+ delete mode 100644 run_sample_app.py
+ delete mode 100644 sample_app/__init__.py
+ delete mode 100644 sample_app/default_config.py
+ delete mode 100644 sample_app/forms.py
+ delete mode 100644 sample_app/frontend.py
+ delete mode 100644 sample_app/nav.py
+ delete mode 100644 sample_app/requirements.txt
+ delete mode 100644 sample_app/static/html5shiv.min.js
+ delete mode 100644 sample_app/static/respond.min.js
+ delete mode 100644 sample_app/static/sample-app.css
+ delete mode 100644 sample_app/templates/base.html
+ delete mode 100644 sample_app/templates/index.html
+ delete mode 100644 sample_app/templates/signup.html
+ delete mode 100644 sample_application/__init__.py
+ delete mode 100644 sample_application/templates/index.html
+
+diff --git a/run_sample_app.py b/run_sample_app.py
+deleted file mode 100644
+index 3da8d6f..0000000
+--- a/run_sample_app.py
++++ /dev/null
+@@ -1,16 +0,0 @@
+-# under normal circumstances, this script would not be necessary. the
+-# sample_application would have its own setup.py and be properly installed;
+-# however since it is not bundled in the sdist package, we need some hacks
+-# to make it work
+-
+-import os
+-import sys
+-
+-sys.path.append(os.path.dirname(__name__))
+-
+-from sample_application import create_app
+-
+-# create an app instance
+-app = create_app()
+-
+-app.run(debug=True)
+diff --git a/sample_app/__init__.py b/sample_app/__init__.py
+deleted file mode 100644
+index d34b8d8..0000000
+--- a/sample_app/__init__.py
++++ /dev/null
+@@ -1,48 +0,0 @@
+-# Welcome to the Flask-Bootstrap sample application. This will give you a
+-# guided tour around creating an application using Flask-Bootstrap.
+-#
+-# To run this application yourself, please install its requirements first:
+-#
+-#   $ pip install -r sample_app/requirements.txt
+-#
+-# Then, you can actually run the application.
+-#
+-#   $ flask --app=sample_app dev
+-#
+-# Afterwards, point your browser to http://localhost:5000, then check out the
+-# source.
+-
+-from flask import Flask
+-from flask_appconfig import AppConfig
+-from flask_bootstrap import Bootstrap
+-
+-from .frontend import frontend
+-from .nav import nav
+-
+-
+-def create_app(configfile=None):
+-    # We are using the "Application Factory"-pattern here, which is described
+-    # in detail inside the Flask docs:
+-    # http://flask.pocoo.org/docs/patterns/appfactories/
+-
+-    app = Flask(__name__)
+-
+-    # We use Flask-Appconfig here, but this is not a requirement
+-    AppConfig(app)
+-
+-    # Install our Bootstrap extension
+-    Bootstrap(app)
+-
+-    # Our application uses blueprints as well; these go well with the
+-    # application factory. We already imported the blueprint, now we just need
+-    # to register it:
+-    app.register_blueprint(frontend)
+-
+-    # Because we're security-conscious developers, we also hard-code disabling
+-    # the CDN support (this might become a default in later versions):
+-    app.config['BOOTSTRAP_SERVE_LOCAL'] = True
+-
+-    # We initialize the navigation as well
+-    nav.init_app(app)
+-
+-    return app
+diff --git a/sample_app/default_config.py b/sample_app/default_config.py
+deleted file mode 100644
+index 45fb299..0000000
+--- a/sample_app/default_config.py
++++ /dev/null
+@@ -1,7 +0,0 @@
+-# The default_config module automatically gets imported by Appconfig, if it
+-# exists. See https://pypi.python.org/pypi/flask-appconfig for details.
+-
+-# Note: Don't *ever* do this in a real app. A secret key should not have a
+-#       default, rather the app should fail if it is missing. For the sample
+-#       application, one is provided for convenience.
+-SECRET_KEY = 'devkey'
+diff --git a/sample_app/forms.py b/sample_app/forms.py
+deleted file mode 100644
+index 059ff9e..0000000
+--- a/sample_app/forms.py
++++ /dev/null
+@@ -1,22 +0,0 @@
+-from flask_wtf import Form
+-from wtforms.fields import *
+-from wtforms.validators import Required, Email
+-
+-
+-class SignupForm(Form):
+-    name = TextField(u'Your name', validators=[Required()])
+-    password = TextField(u'Your favorite password', validators=[Required()])
+-    email = TextField(u'Your email address', validators=[Email()])
+-    birthday = DateField(u'Your birthday')
+-
+-    a_float = FloatField(u'A floating point number')
+-    a_decimal = DecimalField(u'Another floating point number')
+-    a_integer = IntegerField(u'An integer')
+-
+-    now = DateTimeField(u'Current time',
+-                        description='...for no particular reason')
+-    sample_file = FileField(u'Your favorite file')
+-    eula = BooleanField(u'I did not read the terms and conditions',
+-                        validators=[Required('You must agree to not agree!')])
+-
+-    submit = SubmitField(u'Signup')
+diff --git a/sample_app/frontend.py b/sample_app/frontend.py
+deleted file mode 100644
+index f7e1be0..0000000
+--- a/sample_app/frontend.py
++++ /dev/null
+@@ -1,65 +0,0 @@
+-# This contains our frontend; since it is a bit messy to use the @app.route
+-# decorator style when using application factories, all of our routes are
+-# inside blueprints. This is the front-facing blueprint.
+-#
+-# You can find out more about blueprints at
+-# http://flask.pocoo.org/docs/blueprints/
+-
+-from flask import Blueprint, render_template, flash, redirect, url_for
+-from flask_bootstrap import __version__ as FLASK_BOOTSTRAP_VERSION
+-from flask_nav.elements import Navbar, View, Subgroup, Link, Text, Separator
+-from markupsafe import escape
+-
+-from .forms import SignupForm
+-from .nav import nav
+-
+-frontend = Blueprint('frontend', __name__)
+-
+-# We're adding a navbar as well through flask-navbar. In our example, the
+-# navbar has an usual amount of Link-Elements, more commonly you will have a
+-# lot more View instances.
+-nav.register_element('frontend_top', Navbar(
+-    View('Flask-Bootstrap', '.index'),
+-    View('Home', '.index'),
+-    View('Forms Example', '.example_form'),
+-    View('Debug-Info', 'debug.debug_root'),
+-    Subgroup(
+-        'Docs',
+-        Link('Flask-Bootstrap', 'http://pythonhosted.org/Flask-Bootstrap'),
+-        Link('Flask-AppConfig', 'https://github.com/mbr/flask-appconfig'),
+-        Link('Flask-Debug', 'https://github.com/mbr/flask-debug'),
+-        Separator(),
+-        Text('Bootstrap'),
+-        Link('Getting started', 'http://getbootstrap.com/getting-started/'),
+-        Link('CSS', 'http://getbootstrap.com/css/'),
+-        Link('Components', 'http://getbootstrap.com/components/'),
+-        Link('Javascript', 'http://getbootstrap.com/javascript/'),
+-        Link('Customize', 'http://getbootstrap.com/customize/'), ),
+-    Text('Using Flask-Bootstrap {}'.format(FLASK_BOOTSTRAP_VERSION)), ))
+-
+-
+-# Our index-page just shows a quick explanation. Check out the template
+-# "templates/index.html" documentation for more details.
+-@frontend.route('/')
+-def index():
+-    return render_template('index.html')
+-
+-
+-# Shows a long signup form, demonstrating form rendering.
+-@frontend.route('/example-form/', methods=('GET', 'POST'))
+-def example_form():
+-    form = SignupForm()
+-
+-    if form.validate_on_submit():
+-        # We don't have anything fancy in our application, so we are just
+-        # flashing a message when a user completes the form successfully.
+-        #
+-        # Note that the default flashed messages rendering allows HTML, so
+-        # we need to escape things if we input user values:
+-        flash('Hello, {}. You have successfully signed up'
+-              .format(escape(form.name.data)))
+-
+-        # In a real application, you may wish to avoid this tedious redirect.
+-        return redirect(url_for('.index'))
+-
+-    return render_template('signup.html', form=form)
+diff --git a/sample_app/nav.py b/sample_app/nav.py
+deleted file mode 100644
+index 9f055b4..0000000
+--- a/sample_app/nav.py
++++ /dev/null
+@@ -1,7 +0,0 @@
+-from flask_nav import Nav
+-
+-# To keep things clean, we keep our Flask-Nav instance in here. We will define
+-# frontend-specific navbars in the respective frontend, but it is also possible
+-# to put share navigational items in here.
+-
+-nav = Nav()
+diff --git a/sample_app/requirements.txt b/sample_app/requirements.txt
+deleted file mode 100644
+index 61591e0..0000000
+--- a/sample_app/requirements.txt
++++ /dev/null
+@@ -1,5 +0,0 @@
+-flask-appconfig>=0.10
+-flask-bootstrap
+-flask-nav
+-flask-debug
+-flask-wtf
+diff --git a/sample_app/static/html5shiv.min.js b/sample_app/static/html5shiv.min.js
+deleted file mode 100644
+index 92f741f..0000000
+--- a/sample_app/static/html5shiv.min.js
++++ /dev/null
+@@ -1,4 +0,0 @@
+-/**
+-* @preserve HTML5 Shiv 3.7.3-pre | @afarkas @jdalton @jon_neal @rem | MIT/GPL2 Licensed
+-*/
+-!function(a,b){function c(a,b){var c=a.createElement("p"),d=a.getElementsByTagName("head")[0]||a.documentElement;return c.innerHTML="x<style>"+b+"</style>",d.insertBefore(c.lastChild,d.firstChild)}function d(){var a=t.elements;return"string"==typeof a?a.split(" "):a}function e(a,b){var c=t.elements;"string"!=typeof c&&(c=c.join(" ")),"string"!=typeof a&&(a=a.join(" ")),t.elements=c+" "+a,j(b)}function f(a){var b=s[a[q]];return b||(b={},r++,a[q]=r,s[r]=b),b}function g(a,c,d){if(c||(c=b),l)return c.createElement(a);d||(d=f(c));var e;return e=d.cache[a]?d.cache[a].cloneNode():p.test(a)?(d.cache[a]=d.createElem(a)).cloneNode():d.createElem(a),!e.canHaveChildren||o.test(a)||e.tagUrn?e:d.frag.appendChild(e)}function h(a,c){if(a||(a=b),l)return a.createDocumentFragment();c=c||f(a);for(var e=c.frag.cloneNode(),g=0,h=d(),i=h.length;i>g;g++)e.createElement(h[g]);return e}function i(a,b){b.cache||(b.cache={},b.createElem=a.createElement,b.createFrag=a.createDocumentFragment,b.frag=b.createFrag()),a.createElement=function(c){return t.shivMethods?g(c,a,b):b.createElem(c)},a.createDocumentFragment=Function("h,f","return function(){var n=f.cloneNode(),c=n.createElement;h.shivMethods&&("+d().join().replace(/[\w\-:]+/g,function(a){return b.createElem(a),b.frag.createElement(a),'c("'+a+'")'})+");return n}")(t,b.frag)}function j(a){a||(a=b);var d=f(a);return!t.shivCSS||k||d.hasCSS||(d.hasCSS=!!c(a,"article,aside,dialog,figcaption,figure,footer,header,hgroup,main,nav,section{display:block}mark{background:#FF0;color:#000}template{display:none}")),l||i(a,d),a}var k,l,m="3.7.3-pre",n=a.html5||{},o=/^<|^(?:button|map|select|textarea|object|iframe|option|optgroup)$/i,p=/^(?:a|b|code|div|fieldset|h1|h2|h3|h4|h5|h6|i|label|li|ol|p|q|span|strong|style|table|tbody|td|th|tr|ul)$/i,q="_html5shiv",r=0,s={};!function(){try{var a=b.createElement("a");a.innerHTML="<xyz></xyz>",k="hidden"in a,l=1==a.childNodes.length||function(){b.createElement("a");var a=b.createDocumentFragment();return"undefined"==typeof a.cloneNode||"undefined"==typeof a.createDocumentFragment||"undefined"==typeof a.createElement}()}catch(c){k=!0,l=!0}}();var t={elements:n.elements||"abbr article aside audio bdi canvas data datalist details dialog figcaption figure footer header hgroup main mark meter nav output picture progress section summary template time video",version:m,shivCSS:n.shivCSS!==!1,supportsUnknownElements:l,shivMethods:n.shivMethods!==!1,type:"default",shivDocument:j,createElement:g,createDocumentFragment:h,addElements:e};a.html5=t,j(b),"object"==typeof module&&module.exports&&(module.exports=t)}("undefined"!=typeof window?window:this,document);
+\ No newline at end of file
+diff --git a/sample_app/static/respond.min.js b/sample_app/static/respond.min.js
+deleted file mode 100644
+index e8d6207..0000000
+--- a/sample_app/static/respond.min.js
++++ /dev/null
+@@ -1,6 +0,0 @@
+-/*! Respond.js v1.4.2: min/max-width media query polyfill
+- * Copyright 2014 Scott Jehl
+- * Licensed under MIT
+- * http://j.mp/respondjs */
+-
+-!function(a){"use strict";a.matchMedia=a.matchMedia||function(a){var b,c=a.documentElement,d=c.firstElementChild||c.firstChild,e=a.createElement("body"),f=a.createElement("div");return f.id="mq-test-1",f.style.cssText="position:absolute;top:-100em",e.style.background="none",e.appendChild(f),function(a){return f.innerHTML='&shy;<style media="'+a+'"> #mq-test-1 { width: 42px; }</style>',c.insertBefore(e,d),b=42===f.offsetWidth,c.removeChild(e),{matches:b,media:a}}}(a.document)}(this),function(a){"use strict";function b(){v(!0)}var c={};a.respond=c,c.update=function(){};var d=[],e=function(){var b=!1;try{b=new a.XMLHttpRequest}catch(c){b=new a.ActiveXObject("Microsoft.XMLHTTP")}return function(){return b}}(),f=function(a,b){var c=e();c&&(c.open("GET",a,!0),c.onreadystatechange=function(){4!==c.readyState||200!==c.status&&304!==c.status||b(c.responseText)},4!==c.readyState&&c.send(null))},g=function(a){return a.replace(c.regex.minmaxwh,"").match(c.regex.other)};if(c.ajax=f,c.queue=d,c.unsupportedmq=g,c.regex={media:/@media[^\{]+\{([^\{\}]*\{[^\}\{]*\})+/gi,keyframes:/@(?:\-(?:o|moz|webkit)\-)?keyframes[^\{]+\{(?:[^\{\}]*\{[^\}\{]*\})+[^\}]*\}/gi,comments:/\/\*[^*]*\*+([^/][^*]*\*+)*\//gi,urls:/(url\()['"]?([^\/\)'"][^:\)'"]+)['"]?(\))/g,findStyles:/@media *([^\{]+)\{([\S\s]+?)$/,only:/(only\s+)?([a-zA-Z]+)\s?/,minw:/\(\s*min\-width\s*:\s*(\s*[0-9\.]+)(px|em)\s*\)/,maxw:/\(\s*max\-width\s*:\s*(\s*[0-9\.]+)(px|em)\s*\)/,minmaxwh:/\(\s*m(in|ax)\-(height|width)\s*:\s*(\s*[0-9\.]+)(px|em)\s*\)/gi,other:/\([^\)]*\)/g},c.mediaQueriesSupported=a.matchMedia&&null!==a.matchMedia("only all")&&a.matchMedia("only all").matches,!c.mediaQueriesSupported){var h,i,j,k=a.document,l=k.documentElement,m=[],n=[],o=[],p={},q=30,r=k.getElementsByTagName("head")[0]||l,s=k.getElementsByTagName("base")[0],t=r.getElementsByTagName("link"),u=function(){var a,b=k.createElement("div"),c=k.body,d=l.style.fontSize,e=c&&c.style.fontSize,f=!1;return b.style.cssText="position:absolute;font-size:1em;width:1em",c||(c=f=k.createElement("body"),c.style.background="none"),l.style.fontSize="100%",c.style.fontSize="100%",c.appendChild(b),f&&l.insertBefore(c,l.firstChild),a=b.offsetWidth,f?l.removeChild(c):c.removeChild(b),l.style.fontSize=d,e&&(c.style.fontSize=e),a=j=parseFloat(a)},v=function(b){var c="clientWidth",d=l[c],e="CSS1Compat"===k.compatMode&&d||k.body[c]||d,f={},g=t[t.length-1],p=(new Date).getTime();if(b&&h&&q>p-h)return a.clearTimeout(i),i=a.setTimeout(v,q),void 0;h=p;for(var s in m)if(m.hasOwnProperty(s)){var w=m[s],x=w.minw,y=w.maxw,z=null===x,A=null===y,B="em";x&&(x=parseFloat(x)*(x.indexOf(B)>-1?j||u():1)),y&&(y=parseFloat(y)*(y.indexOf(B)>-1?j||u():1)),w.hasquery&&(z&&A||!(z||e>=x)||!(A||y>=e))||(f[w.media]||(f[w.media]=[]),f[w.media].push(n[w.rules]))}for(var C in o)o.hasOwnProperty(C)&&o[C]&&o[C].parentNode===r&&r.removeChild(o[C]);o.length=0;for(var D in f)if(f.hasOwnProperty(D)){var E=k.createElement("style"),F=f[D].join("\n");E.type="text/css",E.media=D,r.insertBefore(E,g.nextSibling),E.styleSheet?E.styleSheet.cssText=F:E.appendChild(k.createTextNode(F)),o.push(E)}},w=function(a,b,d){var e=a.replace(c.regex.comments,"").replace(c.regex.keyframes,"").match(c.regex.media),f=e&&e.length||0;b=b.substring(0,b.lastIndexOf("/"));var h=function(a){return a.replace(c.regex.urls,"$1"+b+"$2$3")},i=!f&&d;b.length&&(b+="/"),i&&(f=1);for(var j=0;f>j;j++){var k,l,o,p;i?(k=d,n.push(h(a))):(k=e[j].match(c.regex.findStyles)&&RegExp.$1,n.push(RegExp.$2&&h(RegExp.$2))),o=k.split(","),p=o.length;for(var q=0;p>q;q++)l=o[q],g(l)||m.push({media:l.split("(")[0].match(c.regex.only)&&RegExp.$2||"all",rules:n.length-1,hasquery:l.indexOf("(")>-1,minw:l.match(c.regex.minw)&&parseFloat(RegExp.$1)+(RegExp.$2||""),maxw:l.match(c.regex.maxw)&&parseFloat(RegExp.$1)+(RegExp.$2||"")})}v()},x=function(){if(d.length){var b=d.shift();f(b.href,function(c){w(c,b.href,b.media),p[b.href]=!0,a.setTimeout(function(){x()},0)})}},y=function(){for(var b=0;b<t.length;b++){var c=t[b],e=c.href,f=c.media,g=c.rel&&"stylesheet"===c.rel.toLowerCase();e&&g&&!p[e]&&(c.styleSheet&&c.styleSheet.rawCssText?(w(c.styleSheet.rawCssText,e,f),p[e]=!0):(!/^([a-zA-Z:]*\/\/)/.test(e)&&!s||e.replace(RegExp.$1,"").split("/")[0]===a.location.host)&&("//"===e.substring(0,2)&&(e=a.location.protocol+e),d.push({href:e,media:f})))}x()};y(),c.update=y,c.getEmValue=u,a.addEventListener?a.addEventListener("resize",b,!1):a.attachEvent&&a.attachEvent("onresize",b)}}(this);
+\ No newline at end of file
+diff --git a/sample_app/static/sample-app.css b/sample_app/static/sample-app.css
+deleted file mode 100644
+index 0a3d9e1..0000000
+--- a/sample_app/static/sample-app.css
++++ /dev/null
+@@ -1,3 +0,0 @@
+-.jumbotron {
+-  margin-top: 1em;  // add a little space
+-}
+diff --git a/sample_app/templates/base.html b/sample_app/templates/base.html
+deleted file mode 100644
+index c2b6f54..0000000
+--- a/sample_app/templates/base.html
++++ /dev/null
+@@ -1,44 +0,0 @@
+-{# ``base.html`` is the template all our other templates derive from. While
+-   Flask-Bootstrap ships with its own base, it is good form to create a custom
+-   one for our app, as it allows customizing some aspects.
+-
+-   Deriving from bootstap/base.html gives us a basic page scaffoling.
+-
+-   You can find additional information about template inheritance at
+-
+-   http://jinja.pocoo.org/docs/templates/#template-inheritance
+-#}
+-{%- extends "bootstrap/base.html" %}
+-
+-{# We also set a default title, usually because we might forget to set one.
+-   In our sample app, we will most likely just opt not to change it #}
+-{% block title %}Sample App for Flask-Bootstrap{% endblock %}
+-
+-{# While we are at it, we also enable fixes for legacy browsers. First we
+-   import the necessary macros: #}
+-{% import "bootstrap/fixes.html" as fixes %}
+-
+-{# Then, inside the head block, we apply these. To not replace the header,
+-   ``super()`` is used: #}
+-{% block head %}
+-{{super()}}
+-
+-{#- Docs: http://pythonhosted.org/Flask-Bootstrap/macros.html#fixes
+-   The sample application already contains the required static files. #}
+-{{fixes.ie8()}}
+-{%- endblock %}
+-
+-{# Adding our own CSS files is also done here. Check the documentation at
+-   http://pythonhosted.org/Flask-Bootstrap/basic-usage.html#available-blocks
+-   for an overview. #}
+-{% block styles -%}
+-    {{super()}}  {# do not forget to call super or Bootstrap's own stylesheets
+-                    will disappear! #}
+-    <link rel="stylesheet" type="text/css"
+-          href="{{url_for('static', filename='sample-app.css')}}">
+-{% endblock %}
+-
+-{# Finally, round things out with navigation #}
+-{% block navbar %}
+-{{nav.frontend_top.render()}}
+-{% endblock %}
+diff --git a/sample_app/templates/index.html b/sample_app/templates/index.html
+deleted file mode 100644
+index f6a27f6..0000000
+--- a/sample_app/templates/index.html
++++ /dev/null
+@@ -1,36 +0,0 @@
+-{# This simple template derives from ``base.html``. See ``base.html`` for
+-   more information about template inheritance. #}
+-{%- extends "base.html" %}
+-
+-{# Loads some of the macros included with Flask-Bootstrap. We are using the
+-   utils module here to automatically render Flask's flashed messages in a
+-   bootstrap friendly manner #}
+-{% import "bootstrap/utils.html" as utils %}
+-
+-
+-{# Inside the ``content`` is where you should place most of your own stuff.
+-   This will keep scripts at the page end and a navbar you add on later
+-   intact. #}
+-{% block content %}
+-  <div class="container">
+-  {%- with messages = get_flashed_messages(with_categories=True) %}
+-  {%- if messages %}
+-    <div class="row">
+-      <div class="col-md-12">
+-        {{utils.flashed_messages(messages)}}
+-      </div>
+-    </div>
+-  {%- endif %}
+-  {%- endwith %}
+-    <div class="jumbotron">
+-      <h1>Welcome to Flask-Bootstrap</h1>
+-      <p>This example application demonstrates some (but not all!) of the
+-      features of <a href="http://pythonhosted.org/Flask-Bootstrap">
+-      Flask-Bootstrap</a>.</p>
+-      <p>
+-        <a class="btn btn-lg btn-default" role="button"
+-           href="http://pythonhosted.org/Flask-Bootstrap" >Show docs</a>
+-      </p>
+-    </div>
+-   </div>
+-{%- endblock %}
+diff --git a/sample_app/templates/signup.html b/sample_app/templates/signup.html
+deleted file mode 100644
+index b571075..0000000
+--- a/sample_app/templates/signup.html
++++ /dev/null
+@@ -1,19 +0,0 @@
+-{% import "bootstrap/wtf.html" as wtf %}
+-
+-{%- extends "base.html" %}
+-
+-
+-{% block content %}
+-   <div class="container">
+-      <div class="jumbotron">
+-        <h1>Signup for our awesome service</h1>
+-        <p>Note: Your data isn't going anywhere.</p>
+-      </div>
+-   <div class="col-md-12">
+-     {% if request.args.get('legacy') -%}
+-       {{wtf.quick_form(form, novalidate=True)}}
+-     {%- else -%}
+-       {{form|render_form()}}
+-     {%- endif %}
+-   </div>
+-{%- endblock %}
+diff --git a/sample_application/__init__.py b/sample_application/__init__.py
+deleted file mode 100644
+index 7076d8c..0000000
+--- a/sample_application/__init__.py
++++ /dev/null
+@@ -1,76 +0,0 @@
+-from flask import Flask, render_template, flash
+-from flask_bootstrap import Bootstrap
+-from flask_appconfig import AppConfig
+-from flask_wtf import Form, RecaptchaField
+-from flask_wtf.file import FileField
+-from wtforms import TextField, HiddenField, ValidationError, RadioField,\
+-    BooleanField, SubmitField, IntegerField, FormField, validators
+-from wtforms.validators import Required
+-
+-
+-# straight from the wtforms docs:
+-class TelephoneForm(Form):
+-    country_code = IntegerField('Country Code', [validators.required()])
+-    area_code = IntegerField('Area Code/Exchange', [validators.required()])
+-    number = TextField('Number')
+-
+-
+-class ExampleForm(Form):
+-    field1 = TextField('First Field', description='This is field one.')
+-    field2 = TextField('Second Field', description='This is field two.',
+-                       validators=[Required()])
+-    hidden_field = HiddenField('You cannot see this', description='Nope')
+-    recaptcha = RecaptchaField('A sample recaptcha field')
+-    radio_field = RadioField('This is a radio field', choices=[
+-        ('head_radio', 'Head radio'),
+-        ('radio_76fm', "Radio '76 FM"),
+-        ('lips_106', 'Lips 106'),
+-        ('wctr', 'WCTR'),
+-    ])
+-    checkbox_field = BooleanField('This is a checkbox',
+-                                  description='Checkboxes can be tricky.')
+-
+-    # subforms
+-    mobile_phone = FormField(TelephoneForm)
+-
+-    # you can change the label as well
+-    office_phone = FormField(TelephoneForm, label='Your office phone')
+-
+-    ff = FileField('Sample upload')
+-
+-    submit_button = SubmitField('Submit Form')
+-
+-
+-    def validate_hidden_field(form, field):
+-        raise ValidationError('Always wrong')
+-
+-
+-def create_app(configfile=None):
+-    app = Flask(__name__)
+-    AppConfig(app, configfile)  # Flask-Appconfig is not necessary, but
+-                                # highly recommend =)
+-                                # https://github.com/mbr/flask-appconfig
+-    Bootstrap(app)
+-
+-    # in a real app, these should be configured through Flask-Appconfig
+-    app.config['SECRET_KEY'] = 'devkey'
+-    app.config['RECAPTCHA_PUBLIC_KEY'] = \
+-        '6Lfol9cSAAAAADAkodaYl9wvQCwBMr3qGR_PPHcw'
+-
+-    @app.route('/', methods=('GET', 'POST'))
+-    def index():
+-        form = ExampleForm()
+-        form.validate_on_submit()  # to get error messages to the browser
+-        flash('critical message', 'critical')
+-        flash('error message', 'error')
+-        flash('warning message', 'warning')
+-        flash('info message', 'info')
+-        flash('debug message', 'debug')
+-        flash('different message', 'different')
+-        flash('uncategorized message')
+-        return render_template('index.html', form=form)
+-
+-    return app
+-
+-if __name__ == '__main__':
+-    create_app().run(debug=True)
+diff --git a/sample_application/templates/index.html b/sample_application/templates/index.html
+deleted file mode 100644
+index 4527693..0000000
+--- a/sample_application/templates/index.html
++++ /dev/null
+@@ -1,25 +0,0 @@
+-{% extends "bootstrap/base.html" %}
+-{% import "bootstrap/wtf.html" as wtf %}
+-{% import "bootstrap/fixes.html" as fixes %}
+-{% import "bootstrap/utils.html" as util %}
+-
+-{% block content %}
+-{{util.flashed_messages(dismissible=True)}}
+-<div class="container">
+-  <h1>Hello, world!</h1>
+-
+-  <h2>This is the sample form (basic)</h2>
+-  {{ wtf.quick_form(form, button_map={'submit_button': 'primary'}) }}
+-
+-  <h2>The same form, inline</h2>
+-  {{ wtf.quick_form(form, form_type='inline', button_map={'submit_button': 'primary'}) }}
+-
+-  <h2>And as a horizontal form</h2>
+-  {{ wtf.quick_form(form, form_type='horizontal', button_map={'submit_button': 'primary'})}}
+-</div>
+-{% endblock %}
+-
+-{% block head %}
+-{{super()}}
+-{{fixes.ie8()}}
+-{% endblock %}
