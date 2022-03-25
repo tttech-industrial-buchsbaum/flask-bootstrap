@@ -1,0 +1,22 @@
+#!/usr/bin/make -f
+#export DH_VERBOSE = 1
+
+export PYBUILD_NAME=flask-bootstrap
+
+# disable tests to prevent further dependencies
+export PYBUILD_DISABLE=test
+
+%:
+	dh $@ --with python3,sphinxdoc --buildsystem pybuild
+
+override_dh_sphinxdoc: http_proxy=127.0.0.1:9
+override_dh_sphinxdoc: https_proxy=127.0.0.1:9
+override_dh_sphinxdoc:
+ifeq (,$(findstring nodocs, $(DEB_BUILD_OPTIONS)))
+	PYTHONPATH=. python3 -m sphinx -N -q -E -b html docs/ debian/python-flask-bootstrap-doc/usr/share/doc/python-flask-bootstrap-doc/html/
+	dh_sphinxdoc
+endif
+
+override_dh_compress:
+	dh_compress -X html/
+

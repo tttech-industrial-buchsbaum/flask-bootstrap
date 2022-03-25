@@ -1,0 +1,6 @@
+python3-flask-bootstrap: privacy-breach-google-adsense *
+python3-flask-bootstrap: duplicate-font-file usr/lib/python3/dist-packages/flask_bootstrap/static/fonts/glyphicons-halflings-regular.ttf *
+python3-flask-bootstrap: embedded-javascript-library usr/lib/python3/dist-packages/flask_bootstrap/static/jquery.js *
+python3-flask-bootstrap: embedded-javascript-library usr/lib/python3/dist-packages/flask_bootstrap/static/jquery.min.js *
+python3-flask-bootstrap: embedded-javascript-library usr/lib/python3/dist-packages/flask_bootstrap/static/js/bootstrap.js *
+python3-flask-bootstrap: truetype-font-prohibits-installable-embedding *

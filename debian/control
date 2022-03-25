@@ -1,0 +1,43 @@
+Source: flask-bootstrap
+Maintainer: Helmut Buchsbaum <helmut.buchsbaum@opensource.tttech-industrial.com>
+Section: python
+Priority: optional
+Build-Depends:
+ debhelper-compat (= 13),
+ dh-python,
+ python3-all,
+ python3-setuptools,
+ python3-sphinx,
+ python3-flask,
+ python3-dominate,
+ python3-visitor
+Standards-Version: 4.5.1
+Homepage: https://github.com/mbr/flask-bootstrap
+Vcs-Git: https://github.com/tttech-industrial-buchsbaum/flask-bootstrap.git
+Vcs-Browser: https://github.com/tttech-industrial-buchsbaum/flask-bootstrap
+Testsuite: autopkgtest-pkg-python
+Rules-Requires-Root: no
+
+Package: python3-flask-bootstrap
+Architecture: all
+Depends: ${misc:Depends}, ${python3:Depends}
+Suggests: python-flask-bootstrap-doc
+Description: Bootstrap extension for Flask -- Python 3 module
+ Flask-Bootstrap packages Bootstrap into an extension that mostly
+ consists of a blueprint named ‘bootstrap’. It can also create links
+ to serve Bootstrap from a CDN.
+ .
+ This package provides the Python 3 module.
+
+Package: python-flask-bootstrap-doc
+Architecture: all
+Section: doc
+Depends: ${misc:Depends}, ${sphinxdoc:Depends}
+Multi-Arch: foreign
+Description: Bootstrap extension for Flask -- documentation
+ Flask-Bootstrap packages Bootstrap into an extension that mostly
+ consists of a blueprint named ‘bootstrap’. It can also create links
+ to serve Bootstrap from a CDN.
+ .
+ This package provides the documentation.
+

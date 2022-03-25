@@ -1,0 +1,12 @@
+Document: flask-bootstrap
+Title: Debian flask-bootstrap Manual
+Author: Marc Brinkmann
+Abstract: This manual describes flask-bootstrap - a Flask extension for Bootstrap
+Section: Programming/Python
+
+Format: text
+Files: /usr/share/doc/python-flask-bootstrap-doc/rst/*.txt
+
+Format: HTML
+Index: /usr/share/doc/python-flask-bootstrap-doc/html/index.html
+Files: /usr/share/doc/python-flask-bootstrap-doc/html/*.html
